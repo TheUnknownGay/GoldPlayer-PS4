@@ -18,7 +18,9 @@ LIBS        := -lc -lkernel -lc++ \
                -lSDL2
 
 # ---- Flags supplementaires ----
-EXTRAFLAGS  := -std=c++14
+# gnu++14 (et non c++14) : active les extensions GNU/POSIX requises par les
+# en-tetes musl du toolchain (ex. nanosleep), sinon compilation impossible.
+EXTRAFLAGS  := -std=gnu++14
 
 # ---- Repertoire des sources (.cpp compiles automatiquement) ----
 PROJDIR     := goldplayer
