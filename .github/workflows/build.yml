@@ -1,0 +1,52 @@
+name: Build GoldPlayer PS4 PKG
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compiler le PKG homebrew GoldPlayer
+    runs-on: ubuntu-latest
+    env:
+      # Nécessaires pour exécuter PkgTool.Core (.NET) sur un runner récent.
+      DOTNET_ROLL_FORWARD: Major
+      DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "1"
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Clang, LLD et make
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld make
+
+      - name: Installer libssl 1.1 (requis par PkgTool.Core)
+        run: |
+          wget -q -O /tmp/libssl1.1.deb http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb || \
+          wget -q -O /tmp/libssl1.1.deb https://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb
+          sudo dpkg -i /tmp/libssl1.1.deb
+
+      - name: Télécharger OpenOrbis PS4 Toolchain v0.5.4
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$HOME/oo"
+          gh release download v0.5.4 --repo OpenOrbis/OpenOrbis-PS4-Toolchain --pattern '*.tar.gz' --dir "$HOME/oo"
+          for f in "$HOME/oo"/*.tar.gz; do tar -xzf "$f" -C "$HOME/oo"; done
+          TC=$(dirname "$(find "$HOME/oo" -name link.x | head -1)")
+          echo "OO_PS4_TOOLCHAIN=$TC" >> "$GITHUB_ENV"
+          chmod -R +x "$TC/bin/linux" || true
+
+      - name: Compiler GoldPlayer
+        run: make
+
+      - name: Déposer le PKG téléchargeable
+        uses: actions/upload-artifact@v4
+        with:
+          name: GoldPlayer-PS4-PKG
+          path: "*.pkg"
+          if-no-files-found: error

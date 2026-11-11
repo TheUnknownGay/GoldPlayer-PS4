@@ -1,0 +1,13 @@
+# Artefacts de build (generes par make)
+*.pkg
+eboot.bin
+pkg.gp4
+sce_sys/param.sfo
+goldplayer/x64/
+
+# Divers
+.DS_Store
+node_modules/
+dist/
+*.log
+.env*
